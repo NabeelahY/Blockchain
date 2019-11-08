@@ -13,7 +13,13 @@ def proof_of_work(block):
     in an effort to find a number that is a valid proof
     :return: A valid proof for the provided block
     """
-    pass
+    stringfy_block = json.dumps(block, sort_keys=True).encode()
+    # raw_hash = hashlib.sha256(stringfy_block)
+    # hex_hash = raw_hash.hexdigest()
+    proof = 0
+    while valid_proof(stringfy_block, proof) is False:
+        proof += 1
+    return proof
 
 
 def valid_proof(block_string, proof):
@@ -27,7 +33,10 @@ def valid_proof(block_string, proof):
     correct number of leading zeroes.
     :return: True if the resulting hash is a valid proof, False otherwise
     """
-    pass
+    user_input = f'{block_string}{proof}'.encode()
+    hash = hashlib.sha256(user_input).hexdigest()
+
+    return hash[:6] == '000000'
 
 
 if __name__ == '__main__':
@@ -44,6 +53,7 @@ if __name__ == '__main__':
     f.close()
 
     # Run forever until interrupted
+    print("Starting miner")
     while True:
         r = requests.get(url=node + "/last_block")
         # Handle non-json response
@@ -56,7 +66,7 @@ if __name__ == '__main__':
             break
 
         # TODO: Get the block from `data` and use it to look for a new proof
-        # new_proof = ???
+        new_proof = proof_of_work(data.get('last_block'))
 
         # When found, POST it to the server {"proof": new_proof, "id": id}
         post_data = {"proof": new_proof, "id": id}
@@ -67,4 +77,8 @@ if __name__ == '__main__':
         # TODO: If the server responds with a 'message' 'New Block Forged'
         # add 1 to the number of coins mined and print it.  Otherwise,
         # print the message from the server.
-        pass
+        if data.get('message') == 'New Block Forged':
+            coins_mined += 1
+            print(f"Total coins mined: {coins_mined}")
+        else:
+            print(data.get('message'))
